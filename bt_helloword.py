@@ -31,6 +31,7 @@ if __name__ == '__main__':
 
     
     # cerebro.addanalyzer(bt.analyzers.Returns, _name='returns')
+    
 
     #设置滑点
     # cerebro.broker.set_slippage_fixed(0.1) #绝对滑点
