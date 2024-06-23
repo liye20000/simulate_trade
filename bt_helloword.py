@@ -8,6 +8,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from bt_ma_strategy import BuyAndHoldStrategy 
 from bt_ma_strategy import ShortDMAStrategy
+from bt_ma_strategy import LongDMAStrategy
 
 
 from data_sorting import DataCollector
@@ -90,8 +91,8 @@ if __name__ == '__main__':
         # cerebro.addobserver(bt.observers.BuySell)
 
         # 单数据运行
-        cerebro.addstrategy(ShortDMAStrategy,fast_period=fp,slow_period=sp) #mode = tmode
-        # cerebro.addstrategy(BuyAndHoldStrategy)
+        # cerebro.addstrategy(ShortDMAStrategy,fast_period=fp,slow_period=sp) #mode = tmode
+        cerebro.addstrategy(BuyAndHoldStrategy)
 
 
 
