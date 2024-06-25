@@ -40,17 +40,16 @@ if __name__ == '__main__':
 
     #Prepare binance data to pandas,and from panda to back trader:
     # PARAMETER：进行参数调节
-    optimize_option = False  #是否为优化测算
-    inputcash = 50000
+    optimize_option = True #是否为优化测算
+    inputcash = 200 
 
     csv_file = 'ORDI-2024-1h.csv'
     from_dt = None # datetime.datetime(2024, 5, 1) #None  windows = 5
     to_dt = None #datetime.datetime(2024, 5, 2)
     p_start = None #60
-    p_length = 200 #300
+    p_length = None #200 #300
 
     
-    tmode = 'both'  #long, short, both
     fp=20 #7 ORDI  #15 SOL  11，23 short 最优  80，20 11 30 
     sp=50 #20 ORDI #25 SOL
     
@@ -69,7 +68,7 @@ if __name__ == '__main__':
 
     if optimize_option:
         #对参数进行优化
-        cerebro.optstrategy(ShortDMAStrategy, fast_period=range(5, 20), slow_period=range(20, 50))        
+        cerebro.optstrategy(LongDMAStrategy, fast_period=range(5, 20), slow_period=range(20, 50))        
         
         result = cerebro.run() #单线程运行 maxcpus=1
         # 对优化数据进行打印
@@ -91,8 +90,8 @@ if __name__ == '__main__':
         # cerebro.addobserver(bt.observers.BuySell)
 
         # 单数据运行
-        # cerebro.addstrategy(ShortDMAStrategy,fast_period=fp,slow_period=sp) #mode = tmode
-        cerebro.addstrategy(BuyAndHoldStrategy)
+        cerebro.addstrategy(LongDMAStrategy,fast_period=fp,slow_period=sp) #mode = tmode
+        # cerebro.addstrategy(BuyAndHoldStrategy)
 
 
 
@@ -114,7 +113,9 @@ if __name__ == '__main__':
             print(f'最大亏损：{trade_analyzer.lost.pnl.max}')
             print(f'多头交易次数:{trade_analyzer.long.total} 多头交易总盈利：{trade_analyzer.long.pnl.total}')
             print(f'空头交易次数:{trade_analyzer.short.total} 空头交易总盈利：{trade_analyzer.short.pnl.total}')
-            print(f'最大回撤：{drawdown.max.drawdown}')
+            print(f'最大回撤：{drawdown.max.drawdown:.2f}%')
+            print(f'最大回撤金额：{drawdown.max.moneydown:2f}')
+            print(f'最大回撤时间(天）：{drawdown.max.len}')
         # Save pig to use analysis
         print("==================保存图片中======================")
         fig = cerebro.plot()[0][0]

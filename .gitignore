@@ -1,2 +1,4 @@
-BTLOG.log
-output.png
+*.log
+*.png
+/__pycache__/
+*.pyc
