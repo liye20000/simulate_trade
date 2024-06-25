@@ -33,7 +33,7 @@ def Process_bn_data(filename,from_date = None,to_date=None,start = None, length 
 
 if __name__ == '__main__':
     # 函数测试代码
-    bndata = Process_bn_data(filename='SOLUSDT-2024-1h.csv',start= 10, length = 10)
+    bndata = Process_bn_data(filename='data/BTCUSDT-2022-1h.csv',start= 10, length = 10)
     print(bndata.p.dataname)
     # import os
 
