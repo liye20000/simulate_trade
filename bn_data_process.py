@@ -33,9 +33,19 @@ def Process_bn_data(filename,from_date = None,to_date=None,start = None, length 
 
 if __name__ == '__main__':
     # 函数测试代码
-    bndata = Process_bn_data(filename='data/BTCUSDT-2022-1h.csv',start= 10, length = 10)
+    # bndata = Process_bn_data(filename='data/BTCUSDT-2023-1h.csv',start= 10, length = 10)
+    bndata = Process_bn_data(filename='data/BTCUSDT-2023-1h.csv')
+    
+    # 另外一种方式，直接读取CSV文件
+    # data = pd.read_csv('data/btc_usdt_test.csv',parse_dates=['timestamp'],index_col='timestamp')
+    # bndata = bt.feeds.PandasData(dataname=data )
+    
+    
+    
+    # 打印数据
     print(bndata.p.dataname)
     # import os
+    # print(bndata)
 
     # print("Current working directory:", os.getcwd())
     # file_path = "test_file.txt"

@@ -2,10 +2,10 @@ import backtrader as bt
 import backtrader.indicators as btid
 import logging
 from log_config import logger
-
+from bn_trade_rate import Bn_UM_Futures_FundingRate
 
 class BaseLogStrategy(bt.Strategy):
-    def log(self, txt, level=logging.INFO):
+    def log(self, txt, level=logging.WARNING):
         # 预留，可以设置系统时间
         # dt = dt or self.datas[0].datetime.date(0)
         # log_msg = f'{dt.isoformat()} {txt}'
@@ -21,12 +21,14 @@ class BaseLogStrategy(bt.Strategy):
                       f'卖出价格:{order.executed.price} ' 
                       f'卖出仓位:{order.executed.size} ' 
                       f'手续费:{order.executed.comm} '
+                      f'Cost"{order.executed.value}'
                       )   
             elif order.isbuy():
                 self.log(f'完成买入订单:'
                       f'时间:{bt.num2date(order.executed.dt)} '
                       f'买入价格:{order.executed.price} ' 
                       f'买入仓位:{order.executed.size} ' 
+                      f'Cost"{order.executed.value}'
                       f'手续费:{order.executed.comm} '
                       )   
 
@@ -50,14 +52,18 @@ class BuyAndHoldStrategy(BaseLogStrategy):
         self.put_size = 0
         self.dataclose = self.datas[0].close  # 获取数据集的收盘价
     def next(self):
-        # print(f'data:{self.data.close[0]}')
+        # print(f'date:{self.datas[0].datetime.datetime(0)}')
         if not self.position:  # 检查是否已经持有仓位
+            # print(f'Money is {self.broker.get_cash()}')
+            # self.buy()
             current_price = self.data.close[0]
             current_put  = self.broker.get_cash()
             self.put_size = int(current_put/current_price) 
             self.buy(size =self.put_size,price=current_price)
         if len(self.data) == self.data.buflen() - 1 and self.position:    
             self.sell(size=self.put_size) 
+            # self.sell()
+            # self.close()
     # def stop(self):
     #     if self.position: #有仓位
     #         self.log("没有数据了，卖出？")
@@ -86,8 +92,9 @@ class LongDMAStrategy(BaseDMAStrategy):
  
     def next(self):
         current_price = self.data.close[0]
-        current_put  = self.broker.get_cash()
-        put_size = int(current_put/current_price) 
+        current_put  = self.broker.getcash()*10*0.8
+        put_size = int(current_put/current_price)
+        # put_size = 1 
 
         if not self.position:  #没有仓位
             if self.signal > 0 :
@@ -113,7 +120,7 @@ class ShortDMAStrategy(BaseDMAStrategy):
    
     def next(self):
         current_price = self.data.close[0]
-        current_put  = self.broker.get_cash()
+        current_put  = self.broker.getcash()
         put_size = int(current_put/current_price)
 
         if not self.position:
@@ -128,3 +135,20 @@ class ShortDMAStrategy(BaseDMAStrategy):
             elif self.short_stop_price <= current_price:
                 self.log(f'[做空]触发止损买入,当前买入价格:{current_price}，设定止损价格:{self.short_stop_price}')
                 self.close()
+
+class BN_UM_Futures_LongDMAStrategy(LongDMAStrategy):
+    params = (
+        ('funding_rates', 0.003),  # 资金费率数据
+    )
+
+    def __init__(self):
+        super().__init__() # 调用父类的__init__方法
+        self.rate_strategy = Bn_UM_Futures_FundingRate() #self.p.tradestrategy()
+        self.rate_strategy.broker = self.broker
+        self.rate_strategy.datas = self.datas 
+        self.rate_strategy.analyzers = self.analyzers
+    
+    def next(self):
+        super().next()
+        self.rate_strategy.next()
+        # print(f'The broker cash is {self.broker.cash}' )

@@ -11,8 +11,8 @@ def setup_logging():
     console_handler.setLevel(logging.DEBUG)
 
     # 创建文件handler并设置级别为WARNING
-    file_handler = logging.FileHandler('BTLOG.log',mode='w') # mode='w'
-    file_handler.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler('./debug/BTLOG.log',mode='w') # mode='w' 'a'
+    file_handler.setLevel(logging.WARNING)
  
     # 创建formatter并添加到handlers
     # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
