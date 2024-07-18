@@ -56,7 +56,7 @@ class Bn_UM_Futures_FundingRate(bt.Strategy):
         # 检查是否到达资金费率扣除时间
         if current_datetime >= self.next_funding_time:
             for position in self.broker.positions.values():
-                if position.size > 0:
+                if position.size != 0: #处理多头和空头
                     price = self.datas[0].close
                     funding_fee =  price* position.size * self.p.funding_rate
                     # funding_fee = position.price * position.size * self.p.funding_rate
