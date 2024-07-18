@@ -29,6 +29,17 @@ class DataCollector:
         sorted_df = self.sort_data(primary_key, secondary_key, primary_ascending, secondary_ascending)
         print(tabulate(sorted_df.head(n), headers='keys', tablefmt='pretty', showindex=True))
         # print(sorted_df.head(n).to_string(justify='middle'))
+    
+    def to_excel(self, filename, primary_key, secondary_key, primary_ascending=True, secondary_ascending=True):
+        sorted_df = self.sort_data(primary_key, secondary_key, primary_ascending, secondary_ascending)
+        sorted_df.to_excel(filename, index=False)
+        print(f"Data successfully exported to {filename}")
+    
+    def to_csv(self, filename, primary_key, secondary_key, primary_ascending=True, secondary_ascending=True):
+        sorted_df = self.sort_data(primary_key, secondary_key, primary_ascending, secondary_ascending)
+        sorted_df.to_csv(filename, index=False)
+        print(f"Data successfully exported to {filename}")
+
 
 if __name__ == '__main__':
     # 使用示例
@@ -46,3 +57,7 @@ if __name__ == '__main__':
 
     # 打印前三条数据，按照盈利金额由高到低排序，亏损金额由低到高排序
     collector.print_top_n(3, '盈利金额', '亏损金额', primary_ascending=False, secondary_ascending=True)
+
+
+    collector.to_excel('debug/test.xlsx','盈利金额', '亏损金额', primary_ascending=False, secondary_ascending=True)
+    collector.to_csv('debug/test.csv','盈利金额', '亏损金额', primary_ascending=False, secondary_ascending=True)

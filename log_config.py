@@ -4,7 +4,7 @@ import logging
 def setup_logging():
     # 创建logger
     logger = logging.getLogger('BTLOG')
-    logger.setLevel(logging.DEBUG)  # 设置最低日志级别
+    logger.setLevel(logging.INFO)  # 设置最低日志级别
 
     # 创建控制台handler并设置级别为DEBUG
     console_handler = logging.StreamHandler()
@@ -12,7 +12,7 @@ def setup_logging():
 
     # 创建文件handler并设置级别为WARNING
     file_handler = logging.FileHandler('./debug/BTLOG.log',mode='w') # mode='w' 'a'
-    file_handler.setLevel(logging.WARNING)
+    file_handler.setLevel(logging.DEBUG)
  
     # 创建formatter并添加到handlers
     # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
