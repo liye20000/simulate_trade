@@ -1,0 +1,118 @@
+import backtrader as bt
+import pandas as pd
+import datetime
+
+#Involve to use plot infomation
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from bt_rsi_strategy import MyRSIStrategy
+from bt_rsi_strategy import MyAddationalAnalyzer
+
+# from bn_trade_rate import Bn_UM_Futures_FundingRate
+
+from data_sorting import DataCollector
+from bn_data_process import Process_bn_data
+from bn_trade_rate import FundingFeeAnalyzer
+# from bt_ma_strategy import DMAStrategy
+
+def collect_and_export_results(results, top_n=3, primary_key='最终盈利', secondary_key='最大亏损', primary_ascending=False, secondary_ascending=True, csv_filename='debug/results.csv', excel_filename='debug/results.xlsx'):
+    collector = DataCollector()
+    formatters = {
+    '最大回撤': lambda x: f"{x:.2f}%" if x is not None else None,
+    '胜率': lambda x: f"{x:.2f}" if x is not None else None,
+    '期望收益': lambda x: f"{x:.2f}" if x is not None else None,
+    '回报回撤': lambda x: f"{x:.2f}" if x is not None else None,
+    '盈亏比': lambda x: f"{x:.2f}" if x is not None else None
+    }
+    if not isinstance(results, (list, tuple)):
+        results = [results]  # Ensure results is iterable
+    for run in results:
+        if not isinstance(run, (list, tuple)):
+            run = [run]
+        for substrategy in run:
+            if hasattr(substrategy, 'params'):
+                collector.append(
+                    RSI = substrategy.params.rsi_period,
+                    超买 = substrategy.params.rsi_lower,
+                    ATR = substrategy.params.atr_period,
+                    止盈 = substrategy.params.atr_earn_multiplier,
+                    止损 = substrategy.params.atr_los_multiplier,
+                     
+                    杠杆 = 1,
+                    费率 = substrategy.analyzers.funding_fee_analyzer.get_analysis()["funding_fees"],
+
+                    最终盈利 = substrategy.analyzers.tradeanalyzer.get_analysis().pnl.net.total,
+                    最大盈利 = substrategy.analyzers.MyAddationalAnalyzer.get_analysis()['max_profit'],
+                    平均盈利 = substrategy.analyzers.MyAddationalAnalyzer.get_analysis()['avg_profit'],
+                    最大亏损 = substrategy.analyzers.MyAddationalAnalyzer.get_analysis()['max_loss'],
+                    平均亏损 = substrategy.analyzers.MyAddationalAnalyzer.get_analysis()['avg_loss'],
+                    期望收益 = substrategy.analyzers.MyAddationalAnalyzer.get_analysis()['expected_return'],
+                    盈亏比   = substrategy.analyzers.tradeanalyzer.get_analysis().won.pnl.total / abs(substrategy.analyzers.tradeanalyzer.get_analysis().lost.pnl.total),
+                    
+                    最大回撤 = substrategy.analyzers.drawdown.get_analysis().max.drawdown,
+                    回撤时间 = substrategy.analyzers.drawdown.get_analysis().max.len,
+                    回报回撤 = substrategy.analyzers.MyAddationalAnalyzer.get_analysis()['total_return_rate']/substrategy.analyzers.drawdown.get_analysis().max.drawdown,
+    
+                    交易总数 = substrategy.analyzers.tradeanalyzer.get_analysis().total.closed,
+                    胜率 = substrategy.analyzers.tradeanalyzer.get_analysis().won.total / substrategy.analyzers.tradeanalyzer.get_analysis().total.closed,
+
+                    formatters=formatters
+                )
+    collector.print_top_n(top_n, primary_key, secondary_key, primary_ascending, secondary_ascending)
+    collector.to_csv(csv_filename, primary_key, secondary_key, primary_ascending, secondary_ascending)
+    # collector.to_excel(excel_filename, primary_key, secondary_key, primary_ascending, secondary_ascending)
+
+
+if __name__ == '__main__':
+    #Create one cerebro
+    cerebro = bt.Cerebro()
+    
+    cerebro.addanalyzer(bt.analyzers.TradeAnalyzer,_name='tradeanalyzer')
+    cerebro.addanalyzer(bt.analyzers.DrawDown, _name='drawdown')
+
+    cerebro.addanalyzer(FundingFeeAnalyzer, _name='funding_fee_analyzer')
+    cerebro.addanalyzer(MyAddationalAnalyzer, _name='MyAddationalAnalyzer')
+
+    # 设置初始投入
+    inputcash = 70000
+    cerebro.broker.setcash(inputcash)
+    print('===============Init Money============:%2f' %cerebro.broker.getvalue())
+
+    # 准备数据
+    csv_file = 'data/BTCUSDT-2024-5m.csv'
+    from_dt =  None #datetime.datetime(2024, 6, 1, 0, 0, 0) #None  windows = 5
+    to_dt   = None #datetime.datetime(2024, 7, 1, 0, 0, 0)
+    p_start = None #3000 #4000 #60
+    p_length = None #3000 #200 #300
+    #Get data via panda from csv
+    bndata = Process_bn_data(filename=csv_file,from_date=from_dt,to_date = to_dt, start=p_start, length=p_length)
+    print(bndata.p.dataname)
+
+    # Add data to cerbro
+    cerebro.adddata(bndata)
+    cerebro.addstrategy(MyRSIStrategy)
+    
+    results = cerebro.run() #单线程运行 maxcpus=1       
+        
+    print('Final :%2f' %cerebro.broker.getvalue())
+
+
+    # # Save pig to use analysis
+    # print("==================保存图片中======================")
+    # # (start=100, end=500)
+    # fig = cerebro.plot()[-1][0]
+    # fig.set_size_inches(30, 10)
+    # # fig.savefig('debug/output.svg',format='svg')
+    
+    # fig.savefig('debug/output.png')
+    # print("===================保存完毕=======================")
+
+    print('打印交易分析结果:')
+    collect_and_export_results(results=results) 
+        
+        
+       
+        
+
+        

@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
 
     # 准备数据
-    csv_file = 'data/BTCUSDT-2022-1h.csv'
+    csv_file = 'data/BTCUSDT-2023-15m.csv'
     from_dt = None # datetime.datetime(2024, 5, 1) #None  windows = 5
     to_dt = None #datetime.datetime(2024, 5, 2)
     p_start = None #60
@@ -147,11 +147,11 @@ if __name__ == '__main__':
         
         # cerebro.addstrategy(BuyAndHoldStrategy)
         
-        # cerebro.addstrategy(BN_UM_Futures_LongDMAStrategy,fast_period = fp, slow_period =sp,use_lever=8,lost_perc=0.05, volume_threshold = 1.5)
+        cerebro.addstrategy(BN_UM_Futures_LongDMAStrategy,fast_period = fp, slow_period =sp,use_lever=8,lost_perc=0.05, volume_threshold = 1.5,volume_window = 5)
         # cerebro.addstrategy(LongDMAStrategy,fast_period = fp, slow_period =sp,use_lever = 1,use_lever=8,lost_perc=0.05, volume_threshold = 1.5)
 
         # cerebro.addstrategy(ShortDMAStrategy,fast_period = fp, slow_period =sp, use_lever =1,use_lever=8,lost_perc=0.05, volume_threshold = 1.5)
-        cerebro.addstrategy(BN_UM_Futures_ShortDMAStrategy,fast_period = fp, slow_period =sp,use_lever=8,lost_perc=0.05, volume_threshold = 1.5 )
+        # cerebro.addstrategy(BN_UM_Futures_ShortDMAStrategy,fast_period = fp, slow_period =sp,use_lever=8,lost_perc=0.05, volume_threshold = 1.5 )
         
         results = cerebro.run() #单线程运行 maxcpus=1       
         

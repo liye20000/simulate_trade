@@ -1,7 +1,8 @@
 import backtrader as bt
 import backtrader.indicators as btid
 import logging
-from log_config import logger
+# from log_config import logger
+from lb_logger import log as logger
 from bn_trade_rate import Bn_UM_Futures_FundingRate
 
 class BaseLogStrategy(bt.Strategy):
@@ -10,7 +11,7 @@ class BaseLogStrategy(bt.Strategy):
         # dt = dt or self.datas[0].datetime.date(0)
         # log_msg = f'{dt.isoformat()} {txt}'
         log_msg = f'{txt}'
-        logger.log(level, log_msg)
+        logger.info(log_msg)
 
     def notify_order(self, order):
         if order.status in [order.Completed]:
