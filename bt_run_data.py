@@ -8,6 +8,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from bt_rsi_strategy import MyRSIStrategy
 from bt_rsi_strategy import MyAddationalAnalyzer
+from bt_rsi_strategy import BN_UM_Futures_RSIStrategy
 
 # from bn_trade_rate import Bn_UM_Futures_FundingRate
 
@@ -74,39 +75,42 @@ if __name__ == '__main__':
     cerebro.addanalyzer(FundingFeeAnalyzer, _name='funding_fee_analyzer')
     cerebro.addanalyzer(MyAddationalAnalyzer, _name='MyAddationalAnalyzer')
 
+    
+ 
     # 设置初始投入
-    inputcash = 70000
+    inputcash = 500000
     cerebro.broker.setcash(inputcash)
+    cerebro.broker.setcommission(commission = 0.0005, commtype = bt.CommInfoBase.COMM_PERC,leverage = 50)
     print('===============Init Money============:%2f' %cerebro.broker.getvalue())
 
     # 准备数据
     csv_file = 'data/BTCUSDT-2024-5m.csv'
-    from_dt =  None #datetime.datetime(2024, 6, 1, 0, 0, 0) #None  windows = 5
-    to_dt   = None #datetime.datetime(2024, 7, 1, 0, 0, 0)
+    from_dt = None #datetime.datetime(2024, 5, 1, 2, 0, 0) #None  datetime(2024, 6, 24, 18, 0, 0)
+    to_dt   = None #datetime.datetime(2024, 7, 27, 23, 0, 0)  #datetime(2024, 6, 24, 18, 0, 0)
     p_start = None #3000 #4000 #60
-    p_length = None #3000 #200 #300
+    p_length = None #3000 #3000 #200 #300
     #Get data via panda from csv
     bndata = Process_bn_data(filename=csv_file,from_date=from_dt,to_date = to_dt, start=p_start, length=p_length)
     print(bndata.p.dataname)
 
     # Add data to cerbro
     cerebro.adddata(bndata)
-    cerebro.addstrategy(MyRSIStrategy)
+    cerebro.addstrategy(BN_UM_Futures_RSIStrategy)
+    # cerebro.addstrategy(MyRSIStrategy)
     
-    results = cerebro.run() #单线程运行 maxcpus=1       
+    results = cerebro.run(volume=False) #单线程运行 maxcpus=1       
         
     print('Final :%2f' %cerebro.broker.getvalue())
 
 
-    # # Save pig to use analysis
-    # print("==================保存图片中======================")
-    # # (start=100, end=500)
-    # fig = cerebro.plot()[-1][0]
+    # Save pig to use analysis
+    print("==================保存图片中======================")
+    fig = cerebro.plot(volume=False)[-1][0]  # style = 'candle'
     # fig.set_size_inches(30, 10)
-    # # fig.savefig('debug/output.svg',format='svg')
+    # fig.savefig('debug/output.svg',format='svg')
     
-    # fig.savefig('debug/output.png')
-    # print("===================保存完毕=======================")
+    fig.savefig('debug/output.png')
+    print("===================保存完毕=======================")
 
     print('打印交易分析结果:')
     collect_and_export_results(results=results) 

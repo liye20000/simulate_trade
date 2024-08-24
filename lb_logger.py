@@ -23,12 +23,12 @@ def setup_logger(log_dir="logs"):
     logger.remove()
 
     # # 预留代码，未来如果需要分级存储log，可参考
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    logger.add(os.path.join(log_dir, "debug.log"), level="DEBUG", format=log_formats["DEBUG"])
-    logger.add(os.path.join(log_dir, "info.log"), level="INFO", format=log_formats["INFO"])
-    logger.add(os.path.join(log_dir, "warning.log"), level="WARNING", format=log_formats["WARNING"])
-    logger.add(os.path.join(log_dir, "error.log"), level="ERROR", format=log_formats["ERROR"])
+    # if not os.path.exists(log_dir):
+    #     os.makedirs(log_dir)
+    # logger.add(os.path.join(log_dir, "debug.log"), level="DEBUG", format=log_formats["DEBUG"])
+    # logger.add(os.path.join(log_dir, "info.log"), level="INFO", format=log_formats["INFO"])
+    # logger.add(os.path.join(log_dir, "warning.log"), level="WARNING", format=log_formats["WARNING"])
+    # logger.add(os.path.join(log_dir, "error.log"), level="ERROR", format=log_formats["ERROR"])
 
     # 配置控制台输出，根据日志级别设置不同的格式
     logger.add(sys.stdout, level="DEBUG", format=log_formats["DEBUG"], filter=lambda record: record["level"].name == "DEBUG")
