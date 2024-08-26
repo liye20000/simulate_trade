@@ -1,0 +1,1 @@
+tail -f debug/backround_log.log 
