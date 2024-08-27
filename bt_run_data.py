@@ -98,9 +98,9 @@ if __name__ == '__main__':
 
     # 准备数据
     csv_file = 'data/BTCUSDT-2024-5m.csv'
-    from_dt = None #datetime.datetime(2024, 6, 11, 0, 0, 0) #None  datetime(2024, 6, 24, 18, 0, 0)
-    to_dt   = None #datetime.datetime(2024, 9, 11, 23, 0, 0)  #datetime(2024, 6, 24, 18, 0, 0)
-    p_start = None #3000 #4000 #60
+    from_dt  = None #datetime.datetime(2024, 2, 1, 0, 0, 0) #None  datetime(2024, 6, 24, 18, 0, 0)
+    to_dt    = None #datetime.datetime(2024, 3, 1, 0, 0, 0)  #datetime(2024, 6, 24, 18, 0, 0)
+    p_start  = None #3000 #4000 #60
     p_length = None #3000 #3000 #200 #300
     #Get data via panda from csv
     bndata = Process_bn_data(filename=csv_file,from_date=from_dt,to_date = to_dt, start=p_start, length=p_length)
@@ -108,31 +108,31 @@ if __name__ == '__main__':
 
     # Add data to cerbro
     cerebro.adddata(bndata)
-    # cerebro.addstrategy(BN_UM_Futures_RSIStrategy)
-    # results = cerebro.run(volume=False) #单线程运行 maxcpus=1 
+    cerebro.addstrategy(BN_UM_Futures_RSIStrategy)
+    results = cerebro.run(volume=False) #单线程运行 maxcpus=1 
 
-    cerebro.optstrategy(BN_UM_Futures_RSIStrategy,
-                        rsi_period = range(6,25),  # 参数就是5，6
-                        # rsi_lower_deltha = range(0,5),
-                        rsi_lower = range(20,30),
-                        atr_period = range(4,30), 
-                        # stop_loss_pct = range(5, 101), #[x / 100000.0 for x in range(1, 201)],
-                        # shadown_list_len = range(5,8),
-                        ma_slow_period = range(40,81),
+    # cerebro.optstrategy(BN_UM_Futures_RSIStrategy,
+    #                     # rsi_period = range(4,33),  # 参数就是5，6       
+    #                     # rsi_lower_deltha = range(0,10),
+    #                     # rsi_lower = range(10,40),
+    #                     # atr_period = range(4,33), 
+    #                     # stop_loss_pct = range(5, 500), #[x / 100000.0 for x in range(1, 201)],
+    #                     # shadown_list_len = range(3,12),
+    #                     # ma_slow_period = range(40,300),
 
-                        # init_stop_los_par = [x / 10.0 for x in range(3, 50)], 
-                        # init_stop_los_par_plus = [x / 10.0 for x in range(3, 50)],
-                        # init_stop_profit_par = [x / 10.0 for x in range(3, 50)],
-                        # init_stop_profit_par_plus = [x / 10.0 for x in range(3, 50)],
+    #                     # init_stop_los_par = [x / 10.0 for x in range(3, 50)], 
+    #                     init_stop_los_par_plus = [x / 10.0 for x in range(3, 50)],
+    #                     # init_stop_profit_par = [x / 10.0 for x in range(3, 50)],
+    #                     init_stop_profit_par_plus = [x / 10.0 for x in range(3, 50)],
                         
-                        # stop_los_par = [x / 10.0 for x in range(3, 50)],
-                        # stop_los_par_plus = [x / 10.0 for x in range(3, 50)],
-                        # stop_profit_par = [x / 10.0 for x in range(3, 50)],
-                        # stop_profit_par_plus = [x / 10.0 for x in range(3, 50)]
+    #                     # stop_los_par = [x / 10.0 for x in range(3, 50)],
+    #                     # stop_los_par_plus = [x / 10.0 for x in range(3, 50)],
+    #                     # stop_profit_par = [x / 10.0 for x in range(3, 50)],
+    #                     # stop_profit_par_plus = [x / 10.0 for x in range(3, 50)]
 
-                        )
+    #                     )
     
-    results = cerebro.run(maxcpus = 14) #maxcpus=1
+    # results = cerebro.run(maxcpus = 14) #maxcpus=1
 
     
 

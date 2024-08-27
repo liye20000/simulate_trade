@@ -60,7 +60,7 @@ class MyAddationalAnalyzer(bt.Analyzer):
         avg_loss = self.total_loss / self.loss_trades if self.loss_trades > 0 else 0
         expected_return = (self.total_profit + self.total_loss) / self.total_trades if self.total_trades > 0 else 0 
 
-        # print(f'total fit {self.total_profit}, total loss {self.total_loss} max_holding_period {self.max_holding_period} min_holding_period {self.min_holding_period}')
+        print(f'total fit {self.total_profit}, total loss {self.total_loss} max_holding_period {self.max_holding_period} min_holding_period {self.min_holding_period}')
         self.rets['total_return_rate'] = total_return_rate
         self.rets['max_profit'] = self.max_profit
         self.rets['max_loss'] = self.max_loss
@@ -150,22 +150,22 @@ class LosAndProfitIndicator(bt.Indicator):
 class MyRSIStrategy(BaseLogStrategy):
     params = (
         ('rsi_period', 6),          # RSI 取值周期
-        ('rsi_lower', 25),          # RSI 超卖阈值
+        ('rsi_lower', 24),          # RSI 超卖阈值
         ('rsi_lower_deltha', 0),    # RSI 超卖阀值所加Delth，shadown算法使用
         ('atr_period', 6),          # ATR 取值周期
-        ('stop_loss_pct', 55), # shadown 算法里面下影线的长度
-        ('shadown_list_len', 5),    # shadown 算法用来比较下影线的前值个数
-        ('ma_slow_period', 55),     # 止损均线参数
+        ('stop_loss_pct', 68),      # shadown 算法里面下影线的长度
+        ('shadown_list_len', 6),    # shadown 算法用来比较下影线的前值个数
+        ('ma_slow_period', 50),     # 止损均线参数 50
 
-        ('init_stop_los_par', 1.2),
-        ('init_stop_los_par_plus', 3),
-        ('init_stop_profit_par', 1.2),
-        ('init_stop_profit_par_plus', 3),
+        ('init_stop_los_par', 1.3),  #1.3  
+        ('init_stop_los_par_plus', 2), #3.3
+        ('init_stop_profit_par', 4),
+        ('init_stop_profit_par_plus', 4),
 
-        ('stop_los_par', 2),
-        ('stop_los_par_plus', 5),
-        ('stop_profit_par', 2),
-        ('stop_profit_par_plus', 5),
+        ('stop_los_par', 2),  #参数变得没有意义
+        ('stop_los_par_plus', 4.7),    #4.4  4.7
+        ('stop_profit_par', 2),   # 4也一样，参数变得没有意义
+        ('stop_profit_par_plus', 3.5), #3.2  3.5
 
 
         ('atr_earn_multiplier', 1), # ATR 止盈的乘数
@@ -361,25 +361,25 @@ class MyRSIStrategy(BaseLogStrategy):
 
     def stop(self):
         self.close()
-        print(f'策略结束：RSI:{self.params.rsi_period}\
-              RSI_L:{self.params.rsi_lower}\
-              RSI_L_D:{self.params.rsi_lower_deltha}\
-              ATR:{self.params.atr_period}\
-              STOP_L_P:{self.params.stop_loss_pct}\
-              SHA_L_L:{self.params.shadown_list_len}\
-              MA_S:{self.params.ma_slow_period}\
-              INIT_S_L_P:{self.params.init_stop_los_par}\
-              INIT_S_L_PP:{self.params.init_stop_los_par_plus}\
-              INIT_S_P_P:{self.params.init_stop_profit_par}\
-              INIT_S_P_PP:{self.params.init_stop_profit_par_plus}\
-              S_L_P:{self.params.stop_los_par}\
-              S_L_PP:{self.params.stop_los_par_plus}\
-              S_P_P:{self.params.stop_profit_par}\
-              S_P_PP:{self.params.stop_profit_par_plus}')
-        # self.log(f'RSI策略回测结束: 资金 {self.broker.getvalue():.2f}, 余额 {self.broker.getcash():.2f}')
-        # self.log(f"最大向下振幅: {self.max_drawdown:.2f} ({self.max_drawdown_pct:.2f}%)")
-        # self.log(f"止损占仓位的最大百分比: {self.stop_loss_percentage:.2f}%")
-        # self.log(f'止盈窗口最小{self.min_profit_pct_window:.2f}%, 止盈窗口最大{self.max_profit_pct_window:.2f}%')
+        # print(f'策略结束：RSI:{self.params.rsi_period}\
+        #       RSI_L:{self.params.rsi_lower}\
+        #       RSI_L_D:{self.params.rsi_lower_deltha}\
+        #       ATR:{self.params.atr_period}\
+        #       STOP_L_P:{self.params.stop_loss_pct}\
+        #       SHA_L_L:{self.params.shadown_list_len}\
+        #       MA_S:{self.params.ma_slow_period}\
+        #       INIT_S_L_P:{self.params.init_stop_los_par}\
+        #       INIT_S_L_PP:{self.params.init_stop_los_par_plus}\
+        #       INIT_S_P_P:{self.params.init_stop_profit_par}\
+        #       INIT_S_P_PP:{self.params.init_stop_profit_par_plus}\
+        #       S_L_P:{self.params.stop_los_par}\
+        #       S_L_PP:{self.params.stop_los_par_plus}\
+        #       S_P_P:{self.params.stop_profit_par}\
+        #       S_P_PP:{self.params.stop_profit_par_plus}')
+        self.log(f'RSI策略回测结束: 资金 {self.broker.getvalue():.2f}, 余额 {self.broker.getcash():.2f}')
+        self.log(f"最大向下振幅: {self.max_drawdown:.2f} ({self.max_drawdown_pct:.2f}%)")
+        self.log(f"止损占仓位的最大百分比: {self.stop_loss_percentage:.2f}%")
+        self.log(f'止盈窗口最小{self.min_profit_pct_window:.2f}%, 止盈窗口最大{self.max_profit_pct_window:.2f}%')
 
 
 
