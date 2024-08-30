@@ -38,9 +38,10 @@ class BaseLogStrategy(bt.Strategy):
             self.log(f'完成交易:'
                   f'交易开始时间:{bt.num2date(trade.dtopen)} '
                   f'交易结束时间:{bt.num2date(trade.dtclose)} '
-                  f'未扣除交易费率利润:{trade.pnl} ' 
-                  f'交易手续费:{trade.commission} '
-                  f'扣除交易费率利润:{trade.pnlcomm}'
+                  f'未扣除交易费率利润:{trade.pnl:.2f} ' 
+                  f'交易手续费:{trade.commission:.2f} '
+                  f'扣除交易费率利润:{trade.pnlcomm:.2f}'
+                  f'剩余现金：{self.broker.getcash():.2f}'
                   )
 
 
