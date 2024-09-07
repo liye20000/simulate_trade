@@ -60,7 +60,7 @@ class MyAddationalAnalyzer(bt.Analyzer):
         avg_loss = self.total_loss / self.loss_trades if self.loss_trades > 0 else 0
         expected_return = (self.total_profit + self.total_loss) / self.total_trades if self.total_trades > 0 else 0 
 
-        print(f'total fit {self.total_profit}, total loss {self.total_loss} max_holding_period {self.max_holding_period} min_holding_period {self.min_holding_period}')
+        # print(f'total fit {self.total_profit}, total loss {self.total_loss} max_holding_period {self.max_holding_period} min_holding_period {self.min_holding_period}')
         self.rets['total_return_rate'] = total_return_rate
         self.rets['max_profit'] = self.max_profit
         self.rets['max_loss'] = self.max_loss
@@ -165,29 +165,29 @@ class KDJ(bt.Indicator):
 
 class MyRSIStrategy(BaseLogStrategy):
     params = (
-        ('rsi_period', 6),          # RSI 取值周期
-        ('rsi_lower', 24),          # RSI 超卖阈值
-        ('rsi_lower_deltha', 0),    # RSI 超卖阀值所加Delth，shadown算法使用
-        ('atr_period', 6),          # ATR 取值周期
-        ('stop_loss_pct', 68),      # shadown 算法里面下影线的长度
+        ('rsi_period', 6),          # RSI 取值周期 #6   #RSI 上升算法取值 50
+        ('rsi_lower', 23.8),          # RSI 超卖阈值 # 23.8  #RSI上升算法取值 58.7
+        ('rsi_lower_deltha', 0.6),    # RSI 超卖阀值所加Delth，shadown算法使用 #过优化后， 0.6
+        ('atr_period', 6),          # ATR 取值周期 6
+        ('stop_loss_pct', 77),      # shadown 算法里面下影线的长度
         ('shadown_list_len', 6),    # shadown 算法用来比较下影线的前值个数
         ('ma_slow_period', 50),     # 止损均线参数 50
-
-        ('init_stop_los_par', 1.3),  #1.3  
-        ('init_stop_profit_par', 4), #3.9
-
-        ('init_stop_los_par_plus', 0.3), #3.3  #2
-        ('init_stop_profit_par_plus', 3.8),
-
-        ('stop_los_par', 0.3),  #参数变得没有意义
-        ('stop_profit_par', 3.8),   # 4也一样，参数变得没有意义
-
-        ('stop_los_par_plus', 4.6),    #4.4  4.7
-        ('stop_profit_par_plus', 3.2), #3.2  3.5
+        ('ma_fast_period', 300),
 
         ('kdj_period', 6),    # KDJ 取值周期
         ('kdj_smooth_k', 4),   # KDJ K参数
         ('kdj_smooth_d', 4),   # KDJ D参数
+
+        ('init_stop_los_par', 1.3),  #1.3  
+        ('init_stop_profit_par', 4), #3.9
+        ('stop_los_par_plus', 4.6),    #4.4  4.7
+        ('stop_profit_par_plus', 3.2), #3.2  3.5
+
+        ('init_stop_los_par_plus', 0.3), #3.3  #2
+        ('init_stop_profit_par_plus', 3.8),
+        ('stop_los_par', 0.3),  #参数变得没有意义
+        ('stop_profit_par', 3.8),   # 4也一样，参数变得没有意义
+
 
         ('atr_earn_multiplier', 1), # ATR 止盈的乘数
         ('atr_los_multiplier',1),   # ATR 止损的乘数
@@ -196,14 +196,13 @@ class MyRSIStrategy(BaseLogStrategy):
         ('stddev_period',6),        # 标准差取值周期
         ('boll_period', 20),        
         ('boll_dev', 2),
-        ('ma_fast_period', 10),
         ('macd_fast', 12),
         ('macd_slow', 26),
         ('macd_signal', 9),
 
-        ('profit_pct',1.09), #1.04
-        ('loss_pct',0.94),   #0.98
-        
+        ('profit_pct',1.09), #1.04  # 2-4之间   #固定比例算法 1.09  #ATR比例法 2.95
+        ('loss_pct',0.94),   #0.98             #固定比例算法 0.94  #ATR比例法  4.9
+
         ('profit_pct_plus',1.02),
         ('loss_pct_plus',0.99),
 
@@ -212,6 +211,7 @@ class MyRSIStrategy(BaseLogStrategy):
         
         ('init_profit_pct_plus',1.03),
         ('init_loss_pct_plus',0.9),
+        ('lowerest_period',62),
 
     )
 
@@ -224,6 +224,8 @@ class MyRSIStrategy(BaseLogStrategy):
         self.slow_ema = bt.indicators.EMA(self.data.close,period = self.params.ma_slow_period)
         self.kdj = KDJ(self.data, period=self.params.kdj_period,
                        smooth_k=self.params.kdj_smooth_k, smooth_d=self.params.kdj_smooth_d)
+
+        # self.lowestind = bt.ind.Lowest(self.data.close, period=self.params.lowerest_period)
         # self.boll = bt.indicators.BollingerBands(self.data.close, period=self.params.boll_period, devfactor=self.params.boll_dev)
         # self.ema = bt.indicators.EMA(self.data.close, period=self.params.ema_period)
         # self.sma = bt.indicators.SMA(self.data.close, period=self.params.ema_period)  # 如果需要简单移动均线
@@ -307,30 +309,68 @@ class MyRSIStrategy(BaseLogStrategy):
         return False
 
     def _is_buy_condition1_use_shadown(self):
-        if self.rsi[-1] < self.params.rsi_lower and self.rsi[0] > (self.params.rsi_lower+self.params.rsi_lower_deltha):
-            lower_shadow_1 = (self.data.open[0] - self.data.low[0]) / self.data.open[0]
-            lower_shadow_2 = (self.data.open[-1] - self.data.low[-1]) / self.data.open[-1]
-            if min(lower_shadow_1, lower_shadow_2) > (self.params.stop_loss_pct/100000):
-                if (self.is_lower_shadow(self.data, 0) == True) or (self.is_lower_shadow(self.data, -1) == True ): 
-                    low_values = list(self.data.low.get(size=self.params.shadown_list_len))  # 获取前五个 low 值
-                    min_value = min(low_values)  # 找到最小值
-                    min_index = low_values.index(min_value)  # 找到最小值在列表中的索引
-                    relative_index = -len(low_values) + min_index + 1  # 计算相对于当前数据点的索引
-                    if relative_index == 0 or relative_index == -1:
-                        if self.kdj.j[0] < self.kdj.k[0] and self.kdj.k[0] < self.kdj.d[0]:  #TODO addation optimize?
-                        # if self.kdj.k[-1] < self.kdj.d[-1] and self.kdj.k[0] > self.kdj.d[0]:
-                            return True
+        if self.data.close[0] < self.slow_ema[0]:
+            if self.rsi[-1] < self.params.rsi_lower and self.rsi[0] > (self.params.rsi_lower+self.params.rsi_lower_deltha):
+                lower_shadow_1 = (self.data.open[0] - self.data.low[0]) / self.data.open[0]
+                lower_shadow_2 = (self.data.open[-1] - self.data.low[-1]) / self.data.open[-1]
+                if min(lower_shadow_1, lower_shadow_2) > (self.params.stop_loss_pct/100000):
+                    if (self.is_lower_shadow(self.data, 0) == True) or (self.is_lower_shadow(self.data, -1) == True ): 
+                        low_values = list(self.data.low.get(size=self.params.shadown_list_len))  # 获取前五个 low 值
+                        min_value = min(low_values)  # 找到最小值
+                        min_index = low_values.index(min_value)  # 找到最小值在列表中的索引
+                        relative_index = -len(low_values) + min_index + 1  # 计算相对于当前数据点的索引
+                        if relative_index == 0 or relative_index == -1:
+                            # if self.kdj.j[-1]<0 and self.kdj.j[0]>0:
+                            if self.kdj.j[0] < self.kdj.k[0] and self.kdj.k[0] < self.kdj.d[0]:  #TODO addation optimize?
+                            # if self.kdj.k[-1] < self.kdj.d[-1] and self.kdj.k[0] > self.kdj.d[0]:
+                                return True
         return False
     
     def _is_buy_condition2_use_basicrsi(self):
         if self.rsi[-1] < self.p.rsi_lower and self.rsi[0] > self.p.rsi_lower:
             # if self.kdj.j[0] < self.kdj.k[0] and self.kdj.k[0] < self.kdj.d[0]:
             # if self.kdj.j[-1]<0 and self.kdj.j[0]>0:
-            if self.kdj.k[-1] < self.kdj.d[-1] and self.kdj.k[0] > self.kdj.d[0]:
+            # if self.kdj.k[-1] < self.kdj.d[-1] and self.kdj.k[0] > self.kdj.d[0]:
             # if self.kdj.k[-1] < self.kdj.d[-1] and self.kdj.k[0] > self.kdj.d[0] and self.kdj.j[0] > self.kdj.k[0] and self.kdj.j[0] > self.kdj.d[0]:
-               return True
+                # if self.data.close[0] < self.fast_ema[0]:
+                    return True
         return False   
-    
+    def _caculate_profit_loss_parameter(self,is_init = True, mode = 'ATR_Par'):
+        if mode == 'ATR_Par':
+            if is_init == True:
+                profit_parameter = self.params.init_stop_profit_par
+                los_parameter = self.params.init_stop_los_par
+            else:
+                profit_parameter = self.params.stop_profit_par_plus
+                los_parameter = self.params.stop_los_par_plus
+            self.stop_profit_price = self.data.close[0] + profit_parameter*self.atr[0]
+            self.stop_loss_price = self.data.close[0]-los_parameter*self.atr[0]
+        
+        if mode == 'Fix_Par':
+            if is_init == True:
+                self.stop_profit_price = self.data.close[0]*self.p.init_profit_pct
+                self.stop_loss_price = self.data.close[0]*self.p.init_loss_pct 
+            else:
+                # if self.data.close[0] > self.slow_ema[0]:
+                    self.stop_profit_price = self.data.close[0]*self.p.profit_pct_plus
+                    self.stop_loss_price = self.data.close[0]*self.p.loss_pct_plus 
+                # else:
+                    # self.stop_profit_price = self.data.close[0]*self.p.profit_pct
+                    # self.stop_loss_price = self.data.close[0]*self.p.loss_pct
+        
+        if mode == 'ATRPct_Par':
+            if is_init == True:
+                up_parmeter = self.atr[0]*self.p.profit_pct/self.data.open[0]
+                down_parmeter = self.atr[0]*self.p.loss_pct/self.data.open[0]
+            else:
+                up_parmeter = self.atr[0]*self.p.profit_pct/self.data.open[0]
+                down_parmeter = self.atr[0]*self.p.loss_pct/self.data.open[0]
+
+            self.stop_profit_price = self.data.close[0]*(1+up_parmeter) 
+            self.stop_loss_price = self.data.close[0]*(1-down_parmeter)  
+
+
+
     def next(self):
         current_price = self.data.close[0]
         # current_put  = 100*50
@@ -344,24 +384,17 @@ class MyRSIStrategy(BaseLogStrategy):
             if self._is_buy_condition1_use_shadown() == True:
             # if self._is_buy_condition2_use_basicrsi() == True:
                     self.buy_price = self.data.close[0] #open???
+                    current_put  = 100*50
+                    put_size = (current_put/current_price)
                     self.buy(size = put_size)
-                    # if self.data.close[0] > self.slow_ema[0]:
-                    #     profit_parameter = self.params.init_stop_profit_par_plus
-                    #     los_parameter = self.params.init_stop_los_par_plus
-                    # else:
-                    #     profit_parameter = self.params.init_stop_profit_par
-                    #     los_parameter = self.params.init_stop_los_par
-                        
-                    # self.stop_profit_price = self.data.close[0] + profit_parameter*self.atr[0]
-                    # self.stop_loss_price = self.data.close[0]-los_parameter*self.atr[0]
+                     
 
-                    if self.data.close[0] > self.slow_ema[0]:
-                        self.stop_profit_price = self.data.close[0]*self.p.init_profit_pct_plus
-                        self.stop_loss_price = self.data.close[0]*self.p.init_loss_pct_plus 
-                    else:
-                        self.stop_profit_price = self.data.close[0]*self.p.init_profit_pct
-                        self.stop_loss_price = self.data.close[0]*self.p.init_loss_pct 
+                    # self._caculate_profit_loss_parameter(is_init=True, mode='ATRPct_Par')  # ATR 百分比止盈方法
+                    self._caculate_profit_loss_parameter(is_init = True, mode = 'ATR_Par') # ATR止盈方法                       
+                    # self._caculate_profit_loss_parameter(is_init = True, mode = 'Fix_Par') # 固定比例止盈方法
 
+                    # self.stop_profit_price = self.data.close[0] + (self.data.close[0] - self.lowestind[0])*1
+                    # self.stop_loss_price = self.lowestind[0]
                     self._caculate_profit_window()
 
                     #统计信息：
@@ -376,29 +409,21 @@ class MyRSIStrategy(BaseLogStrategy):
 
         else:  # 持仓中
             if self.data.close[0] > self.stop_profit_price:
-                # if self.data.close[0] > self.slow_ema[0]:
-                #     profit_parameter = self.params.stop_profit_par_plus
-                #     los_parameter = self.params.stop_los_par_plus
-                # else:
-                #     profit_parameter = self.params.stop_profit_par
-                #     los_parameter = self.params.stop_los_par
-                    
-                # self.stop_profit_price = self.data.close[0] + profit_parameter*self.atr[0]
-                # self.stop_loss_price = self.data.close[0]-los_parameter*self.atr[0]
-                
-                if self.data.close[0] > self.slow_ema[0]:
-                    self.stop_profit_price = self.data.close[0]*self.p.profit_pct_plus
-                    self.stop_loss_price = self.data.close[0]*self.p.loss_pct_plus 
-                else:
-                    self.stop_profit_price = self.data.close[0]*self.p.profit_pct
-                    self.stop_loss_price = self.data.close[0]*self.p.loss_pct
+                # self.close()
+                # self._caculate_profit_loss_parameter(is_init=False, mode='ATRPct_Par')  # ATR 百分比止盈方法                
+                self._caculate_profit_loss_parameter(is_init=False, mode='ATR_Par')    # ATR止盈方法                
+                # self._caculate_profit_loss_parameter(is_init=False, mode='Fix_Par')   # 固定比例止盈方法
 
+                # self.stop_loss_price = self.lowestind[0]
+                # 计算盈利窗口，统计用
                 self._caculate_profit_window()
-            if self.data.close[0] < self.stop_loss_price: # or self.data.close[0]>self.stop_profit_price:
+            # elif self.data.close[0] < self.lowestind[0]:  #or self.data.close[0]< self.fast_ema[0]:  # or self.data.close[0]>self.stop_profit_price:
+            elif self.data.close[0] < self.stop_loss_price:  #or self.data.close[0] < self.lowestind[0]:  #or self.data.close[0]< self.fast_ema[0]:  # or self.data.close[0]>self.stop_profit_price:
                 self.close()
+                # 交易结束后初始化盈利窗口
                 self._init_profit_window()
             
-            
+            # 统计信息，不参与计算 
             current_drawdown = self.data.open[0] - self.data.low[0]
             current_drawdown_pct = (current_drawdown / self.data.open[0]) * 100  # 转换为百分比
 
@@ -411,18 +436,20 @@ class MyRSIStrategy(BaseLogStrategy):
 
 
     def notify_trade(self, trade):
-        super().notify_trade(trade)
-        if trade.isclosed: 
-            current_cash = self.broker.getcash()
-            if current_cash < 500:
-                #补充本金
-                self.money_in = self.money_in + (500-self.broker.getcash())
+        # super().notify_trade(trade)
+
+        # 计算补充本金和提取收益的方法
+        # if trade.isclosed: 
+        #     current_cash = self.broker.getcash()
+        #     if current_cash < 500:
+        #         #补充本金
+        #         self.money_in = self.money_in + (500-self.broker.getcash())
             
-            elif current_cash >500:
-                # 提取收益
-                self.money_out = self.money_out + (current_cash-500)
-            self.broker.setcash(500)
-            self.log(f'当前账户现金: {current_cash} 补充本金：{self.money_in} 提取收益： {self.money_out}')
+        #     elif current_cash >500:
+        #         # 提取收益
+        #         self.money_out = self.money_out + (current_cash-500)
+        #     self.broker.setcash(500)
+        #     self.log(f'当前账户现金: {current_cash} 补充本金：{self.money_in} 提取收益： {self.money_out}')
         pass
 
     def notify_order(self, order):
@@ -446,12 +473,18 @@ class MyRSIStrategy(BaseLogStrategy):
         #       S_P_P:{self.params.stop_profit_par}\
         #       S_P_PP:{self.params.stop_profit_par_plus}')
         # self.log(f'策略结束： KDJ_Period {self.p.kdj_period}, KDJ_Smooth_k {self.p.kdj_smooth_k}, KDJ_Smooth_d {self.p.kdj_smooth_d}')
-        # self.log(f'策略结束：init_profit_pct {self.p.init_profit_pct} init_loss_pct_plus {self.p.init_loss_pct}')
-        self.log(f'RSI策略回测结束: 资金 {self.broker.getvalue():.2f}, 余额 {self.broker.getcash():.2f}')
-        self.log(f"最大向下振幅: {self.max_drawdown:.2f} ({self.max_drawdown_pct:.2f}%)")
-        self.log(f"止损占仓位的最大百分比: {self.stop_loss_percentage:.2f}%")
-        self.log(f'止盈窗口最小{self.min_profit_pct_window:.2f}%, 止盈窗口最大{self.max_profit_pct_window:.2f}%')
-        self.log(f'补充本金：{self.money_in} 提取收益： {self.money_out}, 最终提取收益：{self.money_out-self.money_in}')
+        # self.log(f'策略结束： rsi_lower_deltha {self.p.rsi_lower_deltha}, rsi_lower {self.p.rsi_lower}, stop_loss_pct {self.p.stop_loss_pct}')
+        # self.log(f'策略结束： init_stop_los_par {self.p.init_stop_los_par}, init_stop_profit_par {self.p.init_stop_profit_par}, stop_los_par_plus {self.p.stop_los_par_plus}, stop_profit_par_plus {self.p.stop_profit_par_plus}')
+        # self.log(f'策略结束： Atr period {self.p.atr_period} rsi_lower {self.p.rsi_lower} Ma_fast_period {self.p.ma_fast_period}')
+        # self.log(f'策略结束：profit_pct_plus {self.p.profit_pct_plus} loss_pct_plus {self.p.loss_pct}')
+        # self.log(f'profit_pct {self.p.profit_pct}, loss_pct {self.p.loss_pct}，ATR {self.p.atr_period}, slow_ma {self.p.ma_slow_period}')
+        # self.log(f'RSI策略回测结束: 资金 {self.broker.getvalue():.2f}, 余额 {self.broker.getcash():.2f}')
+        # self.log(f"最大向下振幅: {self.max_drawdown:.2f} ({self.max_drawdown_pct:.2f}%)")
+        # self.log(f"止损占仓位的最大百分比: {self.stop_loss_percentage:.2f}%")
+        # self.log(f"fast_sma: {self.p.ma_fast_period}")
+        self.log(f"lowerest_period: {self.p.lowerest_period}")
+        # self.log(f'止盈窗口最小{self.min_profit_pct_window:.2f}%, 止盈窗口最大{self.max_profit_pct_window:.2f}%')
+        # self.log(f'补充本金：{self.money_in} 提取收益： {self.money_out}, 最终提取收益：{self.money_out-self.money_in}')
 
 
 

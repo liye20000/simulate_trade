@@ -9,6 +9,10 @@ def Process_bn_data(filename,from_date = None,to_date=None,start = None, length 
     new_order = ['opentime','open','high','low','close','volume','ignore']
     df = df.loc[:,new_order]
 
+    # print("Close min:", df['close'].min())
+    # print("Close max:", df['close'].max())
+
+
     # 当前处理是先取条数，再看时间
     if start is None and length is None:
         data_slice = df
