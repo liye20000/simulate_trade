@@ -23,3 +23,4 @@ loss_pct_plus,0.99
 lowerest_period,3
 max_loss_pct,0.99
 max_duration,212
+recordtrade,False

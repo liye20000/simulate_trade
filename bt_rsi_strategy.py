@@ -2,6 +2,7 @@ import backtrader as bt
 from bn_trade_rate import Bn_UM_Futures_FundingRate
 from bt_ma_strategy import BaseLogStrategy
 from bn_trade_rate import Bn_UM_Futures_FundingRate
+import csv #用来存储交易信息
 
 
 #自建分析器，用来统计除Backtrader自带分析器外，需要额外分析统计的信息
@@ -266,6 +267,8 @@ class MyRSIStrategy(BaseLogStrategy):
         ('lowerest_period', 3),    #前期最低值止损策略 前期k线个数
         ('max_loss_pct', 0.99),    #最高比例止损参数
         ('max_duration', 212),     #最长时间止损策略 k线个数，乘以分钟数等于时间
+        
+        ('recordtrade', False),     #记录交易到csv的开关
 
     )
 
@@ -277,7 +280,7 @@ class MyRSIStrategy(BaseLogStrategy):
         self.kdj = KDJ(self.data, period=self.params.kdj_period,
                        smooth_k=self.params.kdj_smooth_k, smooth_d=self.params.kdj_smooth_d)
 
-        # self.lowestind = bt.ind.Lowest(self.data.low, period=self.params.lowerest_period)
+        self.lowestind = bt.ind.Lowest(self.data.low, period=self.params.lowerest_period)
         # self.stddev = bt.indicators.StdDev(self.data.close, period=self.params.stddev_period)
         # self.fast_ema = bt.indicators.EMA(self.data.close,period = self.params.ma_fast_period)
         # self.boll = bt.indicators.BollingerBands(self.data.close, period=self.params.boll_period, devfactor=self.params.boll_dev)
@@ -306,6 +309,19 @@ class MyRSIStrategy(BaseLogStrategy):
         self.current_pct = 0
         self.lost_pct = 0
         self.profit_pct = 0
+
+        self.current_input_cash = 0
+
+
+        self.stop_order = None
+        self.put_size = 0
+        # 交易信息存储
+        # 初始化时打开csv文件并写入表头
+        if self.p.recordtrade == True:
+            self.csv_file = open('debug/trade_results.csv', mode='w', newline='')
+            self.csv_writer = csv.writer(self.csv_file)
+            self.csv_writer.writerow(['交易ID', '预算', '盈利亏损', '现金'])
+
 
     #内置函数，初始化盈利亏损窗口参数
     def _init_profit_window(self):
@@ -410,33 +426,44 @@ class MyRSIStrategy(BaseLogStrategy):
             self.stop_profit_price = self.data.close[0]*(1+up_parmeter) 
             self.stop_loss_price = self.data.close[0]*(1-down_parmeter)  
     def next(self):
-        current_price = self.data.close[0]
-        current_put  = 100*50
-        put_size = (current_put/current_price)
+        
         if not self.position:  # 如果未持仓
             if self._is_buy_condition1_use_shadown() == True:
             # if self._is_buy_condition2_use_basicrsi() == True:
-                    self.buy_price = self.data.close[0] #open???
+                    self.buy_price = self.data.close[0] 
                     self.buy_time = len(self)
-                    current_put  = 100*50
-                    put_size = (current_put/current_price)
-                    self.buy(size = put_size)
+                    current_price = self.data.close[0]
+                    self.current_input_cash = self.broker.getvalue()*0.02  #0.02是风险系数
+                    current_put  = self.current_input_cash*200  #50是杠杆
+                    self.put_size = (current_put/current_price)
                     # self._caculate_profit_loss_parameter(is_init=True, mode='ATRPct_Par')  # ATR 百分比止盈方法
                     self._caculate_profit_loss_parameter(is_init = True, mode = 'ATR_Par') # ATR止盈方法                       
                     # self._caculate_profit_loss_parameter(is_init = True, mode = 'Fix_Par') # 固定比例止盈方法
 
                     # 前期最低值 + 固定盈亏比 止盈止损法
-                    # self.stop_profit_price = self.data.close[0]+ (self.data.close[0] - self.lowestind[0])*1.5
-                    # self.stop_loss_price = self.data.close[0]- (self.data.close[0] - self.lowestind[0])*1 
+                    # self.stop_profit_price = self.data.close[0]+ (self.data.close[0] - self.lowestind[0])*2
+                    # self.stop_loss_price = self.data.close[0]- (self.data.close[0] - self.lowestind[0])*1
                     
                     # 计算盈利窗口，统计用
                     self._caculate_profit_window()
+
+                    # 执行买入操作
+                    self.buy(size = self.put_size)
+
+                    # # 括号交易，带止盈止损价格，可以不用next，直接止盈止损，用它来测试与在next到来的时候的止盈止损差异
+                    # self.stop_order = self.buy_bracket(
+                    #     size = self.put_size,
+                    #     # price=self.buy_price,  # 买入价格
+                    #     stopprice= self.stop_loss_price,  # 止损价格
+                    #     limitprice= self.stop_profit_price# 止盈价格
+                    # )
 
         else:  # 持仓中
             # hold_duration = len(self) - self.buy_time  计算持仓时长
             # current_profit = (self.data.close[0] - self.buy_price)
             if self.data.close[0] >= self.stop_profit_price:
                 # self.close() #可以一次盈利后即可止盈
+                
                 # self._caculate_profit_loss_parameter(is_init=False, mode='ATRPct_Par')  # ATR 百分比止盈方法                
                 self._caculate_profit_loss_parameter(is_init=False, mode='ATR_Par')    # ATR止盈方法                
                 # self._caculate_profit_loss_parameter(is_init=False, mode='Fix_Par')   # 固定比例止盈方法
@@ -444,7 +471,7 @@ class MyRSIStrategy(BaseLogStrategy):
                 # 前期最低值 + 固定盈亏比 止盈止损法
                 # self.stop_profit_price = self.data.close[0]+ (self.data.close[0] - self.lowestind[0])*1.5
                 # self.stop_loss_price = self.data.close[0]- (self.data.close[0] - self.lowestind[0])*1 
-
+                
                 # 计算盈利窗口，统计用
                 self._caculate_profit_window() 
             elif (self.data.close[0] < self.stop_loss_price                              # 小于止损值，关闭交易
@@ -458,6 +485,12 @@ class MyRSIStrategy(BaseLogStrategy):
         self._update_profit_indicator()
     def notify_trade(self, trade):
         # super().notify_trade(trade)
+        if self.p.recordtrade == True:
+            if trade.isclosed: 
+                trade_id = trade.ref
+                self.log(f'预算：{self.current_input_cash:.2f},盈利/亏损{trade.pnlcomm:2f}剩余现金{self.broker.getcash():.2f}')
+                self.csv_writer.writerow([trade_id, self.current_input_cash, trade.pnlcomm, self.broker.getcash()])
+            
         pass
     def notify_order(self, order):
         #关闭继承的log
@@ -465,6 +498,9 @@ class MyRSIStrategy(BaseLogStrategy):
 
     def stop(self):
         self.close()
+        if self.p.recordtrade == True:
+            # 策略结束时关闭csv文件
+            self.csv_file.close()
         # self.log(f'RSI策略回测结束: 资金 {self.broker.getvalue():.2f}, 余额 {self.broker.getcash():.2f}')
 
 

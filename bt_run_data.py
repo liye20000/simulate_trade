@@ -138,7 +138,7 @@ if __name__ == '__main__':
     
  
     # 设置初始投入
-    inputcash = 5000000
+    inputcash = 1000 
     cerebro.broker.setcash(inputcash)
     cerebro.broker.setcommission(commission = 0.0005, commtype = bt.CommInfoBase.COMM_PERC,leverage = 50)
     print('初始投入资金:%2f' %cerebro.broker.getvalue())
@@ -213,7 +213,6 @@ if __name__ == '__main__':
     #单独运行策略操作 
     else:
         
-        # print('Start:%2f' %cerebro.broker.getvalue())
         cerebro.addstrategy(BN_UM_Futures_RSIStrategy)
         results = cerebro.run(volume=False) #单线程运行 maxcpus=1 
         print('最终获得资金:%2f' %cerebro.broker.getvalue())
